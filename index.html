@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#050505" />
+  <title>花好・月圓｜互動版</title>
+  <meta name="app-version" content="idea-orientation-v4" />
+  <style>
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050505;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    #stage{position:fixed;inset:0;display:grid;place-items:center;background:#050505;overflow:hidden}
+    #viewport{position:relative;width:min(100vw,calc(100vh * 16 / 9));aspect-ratio:16/9;overflow:hidden;background:#050505}
+    video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;background:#050505}
+    video.active{opacity:1}
+
+    .hotspot{position:absolute;z-index:20;border:0;padding:0;margin:0;background:transparent;opacity:0;cursor:pointer;pointer-events:none;touch-action:manipulation;border-radius:50%}
+    .hotspot.ready{pointer-events:auto}
+    #pomelo{left:9%;top:48%;width:22%;height:29%}
+    #tea{left:59%;top:59%;width:17%;height:29%}
+    #grill{left:74%;top:47%;width:20%;height:31%}
+
+    #startFallback{position:absolute;inset:0;z-index:40;display:none;place-items:center;border:0;background:rgba(0,0,0,.30);color:white;font:600 18px/1.4 system-ui,-apple-system,"Noto Sans TC",sans-serif;letter-spacing:.08em;cursor:pointer}
+    #startFallback.show{display:grid}
+
+    /* 加 ?debug=1 可暫時看見按鈕位置，正式網址不會顯示。 */
+    body.debug .hotspot.ready{opacity:1;background:rgba(255,255,255,.13);outline:2px dashed rgba(255,255,255,.85)}
+    #debugInfo{display:none;position:absolute;left:10px;top:10px;z-index:50;padding:7px 10px;border-radius:7px;background:rgba(0,0,0,.68);color:#fff;font:12px/1.4 monospace;pointer-events:none}
+    body.debug #debugInfo{display:block}
+  
+    /* 裝置方向提示 */
+    #phoneRotateGuard,
+    #tabletHint{
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      background:rgba(5,5,5,.94);
+      color:#fff;
+      font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;
+      text-align:center;
+    }
+    #phoneRotateGuard .orientation-card,
+    #tabletHint .orientation-card{
+      max-width:420px;
+      padding:28px 24px;
+      border:1px solid rgba(255,255,255,.24);
+      border-radius:20px;
+      background:rgba(255,255,255,.08);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+    }
+    .orientation-icon{
+      display:block;
+      font-size:52px;
+      line-height:1;
+      margin-bottom:14px;
+    }
+    .orientation-title{
+      margin:0 0 8px;
+      font-size:22px;
+      font-weight:700;
+      letter-spacing:.04em;
+    }
+    .orientation-text{
+      margin:0;
+      font-size:15px;
+      line-height:1.7;
+      opacity:.84;
+    }
+    #tabletHint button{
+      margin-top:18px;
+      padding:10px 18px;
+      border:0;
+      border-radius:999px;
+      background:#fff;
+      color:#111;
+      font:700 14px/1 system-ui,-apple-system,"Noto Sans TC",sans-serif;
+      cursor:pointer;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="phoneRotateGuard" aria-live="polite">
+    <div class="orientation-card">
+      <span class="orientation-icon" aria-hidden="true">↻</span>
+      <h2 class="orientation-title">請將手機橫向</h2>
+      <p class="orientation-text">為了完整顯示花好月圓互動畫面，請把手機轉成橫向。</p>
+    </div>
+  </div>
+
+  <div id="tabletHint" aria-live="polite">
+    <div class="orientation-card">
+      <span class="orientation-icon" aria-hidden="true">▭</span>
+      <h2 class="orientation-title">建議使用橫向</h2>
+      <p class="orientation-text">平板橫向觀看會有較完整的互動體驗。</p>
+      <button id="tabletHintClose" type="button">知道了</button>
+    </div>
+  </div>
+
+  <main id="stage" aria-label="花好月圓互動影片">
+    <section id="viewport">
+      <video id="playerA" class="active" muted playsinline preload="auto"></video>
+      <video id="playerB" muted playsinline preload="auto"></video>
+
+      <button id="pomelo" class="hotspot" type="button" aria-label="剝柚子"></button>
+      <button id="grill" class="hotspot" type="button" aria-label="烤肉翻面"></button>
+      <button id="tea" class="hotspot" type="button" aria-label="沏茶"></button>
+
+      <button id="startFallback" type="button">點一下開始</button>
+      <div id="debugInfo"></div>
+    </section>
+  </main>
+
+  <script>
+  (() => {
+    const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
+    if (DEBUG) document.body.classList.add('debug');
+
+    const phoneRotateGuard = document.getElementById('phoneRotateGuard');
+    const tabletHint = document.getElementById('tabletHint');
+    const tabletHintClose = document.getElementById('tabletHintClose');
+
+    function getDeviceKind(){
+      const ua = navigator.userAgent || '';
+      const touchPoints = navigator.maxTouchPoints || 0;
+      const shortestSide = Math.min(window.innerWidth, window.innerHeight);
+
+      // iPadOS 13+ 可能把 UA 報成 Macintosh，用觸控點數補判斷。
+      const isIPad = /iPad/i.test(ua) || (/Macintosh/i.test(ua) && touchPoints > 1);
+      const isAndroidTablet = /Android/i.test(ua) && !/Mobile/i.test(ua);
+      const isTablet = isIPad || isAndroidTablet || (touchPoints > 0 && shortestSide >= 600);
+      if (isTablet) return 'tablet';
+
+      const isPhoneUA = /iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua);
+      const isPhoneSize = touchPoints > 0 && shortestSide < 600;
+      if (isPhoneUA || isPhoneSize) return 'phone';
+
+      return 'desktop';
+    }
+
+    let tabletHintDismissed = sessionStorage.getItem('moon-tablet-hint-dismissed') === '1';
+
+    function updateOrientationUI(){
+      const kind = getDeviceKind();
+      const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+
+      if (kind === 'phone') {
+        phoneRotateGuard.style.display = isPortrait ? 'flex' : 'none';
+        tabletHint.style.display = 'none';
+        return;
+      }
+
+      phoneRotateGuard.style.display = 'none';
+
+      if (kind === 'tablet' && !tabletHintDismissed) {
+        tabletHint.style.display = 'flex';
+      } else {
+        tabletHint.style.display = 'none';
+      }
+    }
+
+    tabletHintClose?.addEventListener('click', () => {
+      tabletHintDismissed = true;
+      sessionStorage.setItem('moon-tablet-hint-dismissed', '1');
+      tabletHint.style.display = 'none';
+    });
+
+    window.addEventListener('resize', updateOrientationUI);
+    window.addEventListener('orientationchange', () => setTimeout(updateOrientationUI, 120));
+    updateOrientationUI();
+
+
+    const clip = n => `video/${String(n).padStart(2,'0')}.mp4`;
+
+    // 三個互動狀態會永久累積；已完成的互動不會回復。
+    const state = { pomelo:false, grill:false, tea:false };
+
+    // 每支影片都是「在目前狀態下做某一個動作」的正確版本。
+    // 柚子 03/07/09/12 在素材端已轉成「完整 -> 剝開」方向。
+    const transitions = {
+      grill: {
+        '000': 2,   // 無狀態 -> 烤肉
+        '001': 5,   // 已沏茶 -> 再烤肉
+        '100': 10,  // 已剝柚子 -> 再烤肉
+        '101': 13   // 已剝柚子+沏茶 -> 最後烤肉
+      },
+      tea: {
+        '000': 4,   // 無狀態 -> 沏茶
+        '010': 6,   // 已烤肉 -> 再沏茶
+        '100': 8,   // 已剝柚子 -> 再沏茶
+        '110': 11   // 已剝柚子+烤肉 -> 最後沏茶
+      },
+      pomelo: {
+        '000': 3,   // 無狀態 -> 剝柚子
+        '001': 7,   // 已沏茶 -> 再剝柚子
+        '010': 9,   // 已烤肉 -> 再剝柚子
+        '011': 12   // 已烤肉+沏茶 -> 最後剝柚子
+      }
+    };
+
+    const a = document.getElementById('playerA');
+    const b = document.getElementById('playerB');
+    const viewport = document.getElementById('viewport');
+    const startFallback = document.getElementById('startFallback');
+    const debugInfo = document.getElementById('debugInfo');
+    const buttons = {
+      pomelo: document.getElementById('pomelo'),
+      grill: document.getElementById('grill'),
+      tea: document.getElementById('tea')
+    };
+
+    let active = a;
+    let standby = b;
+    let currentClip = 1;
+    let busy = false;
+    let pendingAction = null;
+    let endingStarted = false;
+
+    const key = () => `${+state.pomelo}${+state.grill}${+state.tea}`;
+    const completedCount = () => Object.values(state).filter(Boolean).length;
+
+    function updateDebug(){
+      debugInfo.textContent = `clip=${currentClip}  state(PGT)=${key()}  busy=${busy?'yes':'no'}  ending=${endingStarted?'yes':'no'}`;
+    }
+
+    function disableAll(){
+      Object.values(buttons).forEach(btn => {
+        btn.classList.remove('ready');
+        btn.disabled = true;
+      });
+      updateDebug();
+    }
+
+    function enableRemaining(){
+      disableAll();
+      if (busy || endingStarted || [11,12,13].includes(currentClip)) return;
+      for (const action of ['pomelo','grill','tea']) {
+        if (!state[action]) {
+          buttons[action].disabled = false;
+          buttons[action].classList.add('ready');
+        }
+      }
+      updateDebug();
+    }
+
+    function preloadCandidates(){
+      const k = key();
+      for (const action of ['pomelo','grill','tea']) {
+        if (state[action]) continue;
+        const n = transitions[action][k];
+        if (!n) continue;
+        const l = document.createElement('link');
+        l.rel = 'preload'; l.as = 'video'; l.href = clip(n);
+        document.head.appendChild(l);
+      }
+    }
+
+    async function swapAndPlay(n, action=null){
+      busy = true;
+      pendingAction = action;
+      disableAll();
+
+      standby.src = clip(n);
+      standby.load();
+
+      try {
+        if (standby.readyState < 2) {
+          await new Promise((resolve,reject) => {
+            const ok = () => { cleanup(); resolve(); };
+            const bad = () => { cleanup(); reject(new Error('video load error')); };
+            const cleanup = () => {
+              standby.removeEventListener('loadeddata',ok);
+              standby.removeEventListener('error',bad);
+            };
+            standby.addEventListener('loadeddata',ok,{once:true});
+            standby.addEventListener('error',bad,{once:true});
+          });
+        }
+      } catch(e) {
+        busy = false;
+        pendingAction = null;
+        enableRemaining();
+        return;
+      }
+
+      const old = active;
+      const next = standby;
+      next.currentTime = 0;
+      next.classList.add('active');
+      old.classList.remove('active');
+      active = next;
+      standby = old;
+      currentClip = n;
+      updateDebug();
+
+      try {
+        await active.play();
+        startFallback.classList.remove('show');
+      } catch(e) {
+        startFallback.classList.add('show');
+      }
+    }
+
+    async function choose(action){
+      // 播到 11 / 12 / 13 後，任何點擊都交給整頁事件直接進 14。
+      if ([11,12,13].includes(currentClip)) return;
+      // 已完成、播放中、或 ending 已開始：全部忽略。
+      if (busy || endingStarted || state[action]) return;
+      const k = key();
+      const n = transitions[action][k];
+      if (!n) return;
+
+      // 先記住選擇，等該支影片完整播完才正式寫入狀態。
+      await swapAndPlay(n, action);
+    }
+
+    async function startEnding(){
+      if (busy || endingStarted) return;
+      endingStarted = true;
+      disableAll();
+      await swapAndPlay(14, null);
+    }
+
+    function resetToStart(){
+      state.pomelo = false;
+      state.grill = false;
+      state.tea = false;
+      pendingAction = null;
+      endingStarted = false;
+      busy = true;
+      disableAll();
+
+      active.pause();
+      standby.pause();
+      active.src = clip(1);
+      active.currentTime = 0;
+      active.load();
+      currentClip = 1;
+      updateDebug();
+
+      active.play().catch(() => startFallback.classList.add('show'));
+    }
+
+    function onEnded(e){
+      if (e.currentTarget !== active) return;
+
+      // 14 = ENDING；目前先播完後回到第 1 支，整套互動重置。
+      if (currentClip === 14) {
+        resetToStart();
+        return;
+      }
+
+      // 第 1 支只是開場；播完才第一次出現 3 個透明按鈕。
+      if (currentClip === 1) {
+        busy = false;
+        pendingAction = null;
+        enableRemaining();
+        preloadCandidates();
+        return;
+      }
+
+      // 完成剛剛選的互動，狀態從此保留。
+      if (pendingAction) {
+        state[pendingAction] = true;
+        pendingAction = null;
+      }
+      busy = false;
+
+      // 三項都完成時，最後一支一定會是 11 / 12 / 13。
+      // 影片播完後停在該畫面；下一次任何點擊才進 14。
+      if (completedCount() === 3) {
+        disableAll();
+        updateDebug();
+        return;
+      }
+
+      // 否則只開放尚未完成的 2 個 / 1 個透明按鈕。
+      enableRemaining();
+      preloadCandidates();
+    }
+
+    a.addEventListener('ended',onEnded);
+    b.addEventListener('ended',onEnded);
+
+    for (const [action,btn] of Object.entries(buttons)) {
+      btn.addEventListener('click',(event) => {
+        // 最終三支 11 / 12 / 13：不管點哪個 hotspot，都交給 viewport 直接進 14。
+        if ([11,12,13].includes(currentClip)) return;
+
+        // 其他階段：完成過的互動永遠不再觸發。
+        if (state[action]) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        choose(action);
+      });
+    }
+
+    // 只要目前停在 11 / 12 / 13，下一次點畫面任何地方都直接播放第 14 支。
+    viewport.addEventListener('click', (event) => {
+      if (![11,12,13].includes(currentClip) || busy || endingStarted) return;
+      event.preventDefault();
+      event.stopPropagation();
+      startEnding();
+    });
+
+    startFallback.addEventListener('click', async () => {
+      startFallback.classList.remove('show');
+      try { await active.play(); } catch(_) {}
+    });
+
+    // 啟動第 1 支。播放中沒有任何透明按鈕可誤觸。
+    a.src = clip(1);
+    a.load();
+    busy = true;
+    updateDebug();
+    a.play().catch(() => startFallback.classList.add('show'));
+  })();
+  </script>
+</body>
+</html>
