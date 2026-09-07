@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
   <meta name="theme-color" content="#050505" />
   <title>花好・月圓｜互動版</title>
-  <meta name="app-version" content="idea-orientation-v4" />
+  <meta name="app-version" content="idea-mobile-smooth-v5" />
   <style>
     *{box-sizing:border-box}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050505;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -105,8 +105,8 @@
 
   <main id="stage" aria-label="花好月圓互動影片">
     <section id="viewport">
-      <video id="playerA" class="active" muted playsinline preload="auto"></video>
-      <video id="playerB" muted playsinline preload="auto"></video>
+      <video id="playerA" class="active" muted playsinline preload="metadata"></video>
+      <video id="playerB" muted playsinline preload="metadata"></video>
 
       <button id="pomelo" class="hotspot" type="button" aria-label="剝柚子"></button>
       <button id="grill" class="hotspot" type="button" aria-label="烤肉翻面"></button>
@@ -185,22 +185,22 @@
     // 柚子 03/07/09/12 在素材端已轉成「完整 -> 剝開」方向。
     const transitions = {
       grill: {
-        '000': 2,   // 無狀態 -> 烤肉
-        '001': 5,   // 已沏茶 -> 再烤肉
-        '100': 10,  // 已剝柚子 -> 再烤肉
-        '101': 13   // 已剝柚子+沏茶 -> 最後烤肉
+        '000': 2,
+        '001': 5,
+        '100': 10,
+        '101': 13
       },
       tea: {
-        '000': 4,   // 無狀態 -> 沏茶
-        '010': 6,   // 已烤肉 -> 再沏茶
-        '100': 8,   // 已剝柚子 -> 再沏茶
-        '110': 11   // 已剝柚子+烤肉 -> 最後沏茶
+        '000': 4,
+        '010': 6,
+        '100': 8,
+        '110': 11
       },
       pomelo: {
-        '000': 3,   // 無狀態 -> 剝柚子
-        '001': 7,   // 已沏茶 -> 再剝柚子
-        '010': 9,   // 已烤肉 -> 再剝柚子
-        '011': 12   // 已烤肉+沏茶 -> 最後剝柚子
+        '000': 3,
+        '001': 7,
+        '010': 9,
+        '011': 12
       }
     };
 
@@ -249,16 +249,60 @@
       updateDebug();
     }
 
+    // 不同時預載多支候選影片，避免手機搶頻寬造成卡頓。
     function preloadCandidates(){
-      const k = key();
-      for (const action of ['pomelo','grill','tea']) {
-        if (state[action]) continue;
-        const n = transitions[action][k];
-        if (!n) continue;
-        const l = document.createElement('link');
-        l.rel = 'preload'; l.as = 'video'; l.href = clip(n);
-        document.head.appendChild(l);
-      }
+      // intentionally empty
+    }
+
+    function waitUntilBuffered(video, minSeconds = 1.25, timeoutMs = 5000){
+      return new Promise((resolve, reject) => {
+        const started = performance.now();
+
+        const cleanup = () => {
+          video.removeEventListener('error', onError);
+          video.removeEventListener('progress', check);
+          video.removeEventListener('canplay', check);
+          video.removeEventListener('loadeddata', check);
+        };
+
+        const onError = () => {
+          cleanup();
+          reject(new Error('video load error'));
+        };
+
+        const check = () => {
+          if (video.readyState >= 3) {
+            let bufferedSeconds = 0;
+            try {
+              if (video.buffered && video.buffered.length) {
+                bufferedSeconds = video.buffered.end(video.buffered.length - 1) - video.currentTime;
+              }
+            } catch (_) {}
+
+            const shortClipReady =
+              Number.isFinite(video.duration) &&
+              video.duration > 0 &&
+              bufferedSeconds >= Math.min(minSeconds, video.duration * 0.35);
+
+            if (bufferedSeconds >= minSeconds || shortClipReady || video.readyState >= 4) {
+              cleanup();
+              resolve();
+              return;
+            }
+          }
+
+          if (performance.now() - started >= timeoutMs) {
+            cleanup();
+            resolve();
+          }
+        };
+
+        video.addEventListener('error', onError, { once:true });
+        video.addEventListener('progress', check);
+        video.addEventListener('canplay', check);
+        video.addEventListener('loadeddata', check);
+        check();
+      });
     }
 
     async function swapAndPlay(n, action=null){
@@ -266,22 +310,15 @@
       pendingAction = action;
       disableAll();
 
+      // 只載入這次真正要播放的下一支影片。
+      standby.pause();
+      standby.preload = 'auto';
       standby.src = clip(n);
+      standby.currentTime = 0;
       standby.load();
 
       try {
-        if (standby.readyState < 2) {
-          await new Promise((resolve,reject) => {
-            const ok = () => { cleanup(); resolve(); };
-            const bad = () => { cleanup(); reject(new Error('video load error')); };
-            const cleanup = () => {
-              standby.removeEventListener('loadeddata',ok);
-              standby.removeEventListener('error',bad);
-            };
-            standby.addEventListener('loadeddata',ok,{once:true});
-            standby.addEventListener('error',bad,{once:true});
-          });
-        }
+        await waitUntilBuffered(standby);
       } catch(e) {
         busy = false;
         pendingAction = null;
@@ -291,7 +328,7 @@
 
       const old = active;
       const next = standby;
-      next.currentTime = 0;
+
       next.classList.add('active');
       old.classList.remove('active');
       active = next;
@@ -302,21 +339,23 @@
       try {
         await active.play();
         startFallback.classList.remove('show');
+
+        // 新片開始後立刻釋放上一支影片，降低手機記憶體與解碼負擔。
+        standby.pause();
+        standby.removeAttribute('src');
+        standby.load();
+        standby.preload = 'metadata';
       } catch(e) {
         startFallback.classList.add('show');
       }
     }
 
     async function choose(action){
-      // 播到 11 / 12 / 13 後，任何點擊都交給整頁事件直接進 14。
       if ([11,12,13].includes(currentClip)) return;
-      // 已完成、播放中、或 ending 已開始：全部忽略。
       if (busy || endingStarted || state[action]) return;
       const k = key();
       const n = transitions[action][k];
       if (!n) return;
-
-      // 先記住選擇，等該支影片完整播完才正式寫入狀態。
       await swapAndPlay(n, action);
     }
 
@@ -338,6 +377,9 @@
 
       active.pause();
       standby.pause();
+      standby.removeAttribute('src');
+      standby.load();
+      active.preload = 'auto';
       active.src = clip(1);
       active.currentTime = 0;
       active.load();
@@ -350,13 +392,11 @@
     function onEnded(e){
       if (e.currentTarget !== active) return;
 
-      // 14 = ENDING；目前先播完後回到第 1 支，整套互動重置。
       if (currentClip === 14) {
         resetToStart();
         return;
       }
 
-      // 第 1 支只是開場；播完才第一次出現 3 個透明按鈕。
       if (currentClip === 1) {
         busy = false;
         pendingAction = null;
@@ -365,22 +405,18 @@
         return;
       }
 
-      // 完成剛剛選的互動，狀態從此保留。
       if (pendingAction) {
         state[pendingAction] = true;
         pendingAction = null;
       }
       busy = false;
 
-      // 三項都完成時，最後一支一定會是 11 / 12 / 13。
-      // 影片播完後停在該畫面；下一次任何點擊才進 14。
       if (completedCount() === 3) {
         disableAll();
         updateDebug();
         return;
       }
 
-      // 否則只開放尚未完成的 2 個 / 1 個透明按鈕。
       enableRemaining();
       preloadCandidates();
     }
@@ -390,10 +426,8 @@
 
     for (const [action,btn] of Object.entries(buttons)) {
       btn.addEventListener('click',(event) => {
-        // 最終三支 11 / 12 / 13：不管點哪個 hotspot，都交給 viewport 直接進 14。
         if ([11,12,13].includes(currentClip)) return;
 
-        // 其他階段：完成過的互動永遠不再觸發。
         if (state[action]) {
           event.preventDefault();
           event.stopPropagation();
@@ -403,7 +437,6 @@
       });
     }
 
-    // 只要目前停在 11 / 12 / 13，下一次點畫面任何地方都直接播放第 14 支。
     viewport.addEventListener('click', (event) => {
       if (![11,12,13].includes(currentClip) || busy || endingStarted) return;
       event.preventDefault();
@@ -416,7 +449,7 @@
       try { await active.play(); } catch(_) {}
     });
 
-    // 啟動第 1 支。播放中沒有任何透明按鈕可誤觸。
+    a.preload = 'auto';
     a.src = clip(1);
     a.load();
     busy = true;
