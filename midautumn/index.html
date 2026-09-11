@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
   <meta name="theme-color" content="#050505" />
   <title>花好・月圓｜互動版</title>
-  <meta name="app-version" content="idea-mobile-smooth-v5" />
+  <meta name="app-version" content="idea-stable-branch-v6" />
   <style>
     *{box-sizing:border-box}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050505;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -23,12 +23,10 @@
     #startFallback{position:absolute;inset:0;z-index:40;display:none;place-items:center;border:0;background:rgba(0,0,0,.30);color:white;font:600 18px/1.4 system-ui,-apple-system,"Noto Sans TC",sans-serif;letter-spacing:.08em;cursor:pointer}
     #startFallback.show{display:grid}
 
-    /* 加 ?debug=1 可暫時看見按鈕位置，正式網址不會顯示。 */
     body.debug .hotspot.ready{opacity:1;background:rgba(255,255,255,.13);outline:2px dashed rgba(255,255,255,.85)}
     #debugInfo{display:none;position:absolute;left:10px;top:10px;z-index:50;padding:7px 10px;border-radius:7px;background:rgba(0,0,0,.68);color:#fff;font:12px/1.4 monospace;pointer-events:none}
     body.debug #debugInfo{display:block}
-  
-    /* 裝置方向提示 */
+
     #phoneRotateGuard,
     #tabletHint{
       position:fixed;
@@ -81,7 +79,6 @@
       font:700 14px/1 system-ui,-apple-system,"Noto Sans TC",sans-serif;
       cursor:pointer;
     }
-
   </style>
 </head>
 <body>
@@ -130,17 +127,13 @@
       const ua = navigator.userAgent || '';
       const touchPoints = navigator.maxTouchPoints || 0;
       const shortestSide = Math.min(window.innerWidth, window.innerHeight);
-
-      // iPadOS 13+ 可能把 UA 報成 Macintosh，用觸控點數補判斷。
       const isIPad = /iPad/i.test(ua) || (/Macintosh/i.test(ua) && touchPoints > 1);
       const isAndroidTablet = /Android/i.test(ua) && !/Mobile/i.test(ua);
       const isTablet = isIPad || isAndroidTablet || (touchPoints > 0 && shortestSide >= 600);
       if (isTablet) return 'tablet';
-
       const isPhoneUA = /iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua);
       const isPhoneSize = touchPoints > 0 && shortestSide < 600;
       if (isPhoneUA || isPhoneSize) return 'phone';
-
       return 'desktop';
     }
 
@@ -149,15 +142,12 @@
     function updateOrientationUI(){
       const kind = getDeviceKind();
       const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-
       if (kind === 'phone') {
         phoneRotateGuard.style.display = isPortrait ? 'flex' : 'none';
         tabletHint.style.display = 'none';
         return;
       }
-
       phoneRotateGuard.style.display = 'none';
-
       if (kind === 'tablet' && !tabletHintDismissed) {
         tabletHint.style.display = 'flex';
       } else {
@@ -175,14 +165,9 @@
     window.addEventListener('orientationchange', () => setTimeout(updateOrientationUI, 120));
     updateOrientationUI();
 
-
     const clip = n => `video/${String(n).padStart(2,'0')}.mp4`;
-
-    // 三個互動狀態會永久累積；已完成的互動不會回復。
     const state = { pomelo:false, grill:false, tea:false };
 
-    // 每支影片都是「在目前狀態下做某一個動作」的正確版本。
-    // 柚子 03/07/09/12 在素材端已轉成「完整 -> 剝開」方向。
     const transitions = {
       grill: {
         '000': 2,
@@ -249,60 +234,8 @@
       updateDebug();
     }
 
-    // 不同時預載多支候選影片，避免手機搶頻寬造成卡頓。
     function preloadCandidates(){
-      // intentionally empty
-    }
-
-    function waitUntilBuffered(video, minSeconds = 1.25, timeoutMs = 5000){
-      return new Promise((resolve, reject) => {
-        const started = performance.now();
-
-        const cleanup = () => {
-          video.removeEventListener('error', onError);
-          video.removeEventListener('progress', check);
-          video.removeEventListener('canplay', check);
-          video.removeEventListener('loadeddata', check);
-        };
-
-        const onError = () => {
-          cleanup();
-          reject(new Error('video load error'));
-        };
-
-        const check = () => {
-          if (video.readyState >= 3) {
-            let bufferedSeconds = 0;
-            try {
-              if (video.buffered && video.buffered.length) {
-                bufferedSeconds = video.buffered.end(video.buffered.length - 1) - video.currentTime;
-              }
-            } catch (_) {}
-
-            const shortClipReady =
-              Number.isFinite(video.duration) &&
-              video.duration > 0 &&
-              bufferedSeconds >= Math.min(minSeconds, video.duration * 0.35);
-
-            if (bufferedSeconds >= minSeconds || shortClipReady || video.readyState >= 4) {
-              cleanup();
-              resolve();
-              return;
-            }
-          }
-
-          if (performance.now() - started >= timeoutMs) {
-            cleanup();
-            resolve();
-          }
-        };
-
-        video.addEventListener('error', onError, { once:true });
-        video.addEventListener('progress', check);
-        video.addEventListener('canplay', check);
-        video.addEventListener('loadeddata', check);
-        check();
-      });
+      // 不同時預載候選影片，避免手機搶頻寬。
     }
 
     async function swapAndPlay(n, action=null){
@@ -310,15 +243,24 @@
       pendingAction = action;
       disableAll();
 
-      // 只載入這次真正要播放的下一支影片。
-      standby.pause();
       standby.preload = 'auto';
       standby.src = clip(n);
       standby.currentTime = 0;
       standby.load();
 
       try {
-        await waitUntilBuffered(standby);
+        if (standby.readyState < 2) {
+          await new Promise((resolve,reject) => {
+            const ok = () => { cleanup(); resolve(); };
+            const bad = () => { cleanup(); reject(new Error('video load error')); };
+            const cleanup = () => {
+              standby.removeEventListener('loadeddata', ok);
+              standby.removeEventListener('error', bad);
+            };
+            standby.addEventListener('loadeddata', ok, { once:true });
+            standby.addEventListener('error', bad, { once:true });
+          });
+        }
       } catch(e) {
         busy = false;
         pendingAction = null;
@@ -328,7 +270,7 @@
 
       const old = active;
       const next = standby;
-
+      next.currentTime = 0;
       next.classList.add('active');
       old.classList.remove('active');
       active = next;
@@ -339,12 +281,6 @@
       try {
         await active.play();
         startFallback.classList.remove('show');
-
-        // 新片開始後立刻釋放上一支影片，降低手機記憶體與解碼負擔。
-        standby.pause();
-        standby.removeAttribute('src');
-        standby.load();
-        standby.preload = 'metadata';
       } catch(e) {
         startFallback.classList.add('show');
       }
@@ -427,7 +363,6 @@
     for (const [action,btn] of Object.entries(buttons)) {
       btn.addEventListener('click',(event) => {
         if ([11,12,13].includes(currentClip)) return;
-
         if (state[action]) {
           event.preventDefault();
           event.stopPropagation();
