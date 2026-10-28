@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
   <meta name="theme-color" content="#050505" />
   <title>花好・月圓｜ANG 原生互動網站</title>
-  <meta name="app-version" content="ang-selfhost-landscape-v1" />
+  <meta name="app-version" content="ang-selfhost-hotspot-fix-v2" />
   <meta name="description" content="ANG 花好月圓：柚子、烤肉、茶三種互動，14 段原生影片，手機橫向使用。" />
   <style>
     *{box-sizing:border-box}
@@ -17,9 +17,10 @@
 
     .hotspot{position:absolute;z-index:20;border:0;padding:0;margin:0;background:transparent;opacity:0;cursor:pointer;pointer-events:none;touch-action:manipulation;border-radius:50%}
     .hotspot.ready{pointer-events:auto}
-    #pomelo{left:9%;top:48%;width:22%;height:29%}
-    #tea{left:59%;top:59%;width:17%;height:29%}
-    #grill{left:74%;top:47%;width:20%;height:31%}
+    /* Real image coordinates: pomelo on left, grill at upper right, teapot at lower center-right. Keep grill and teapot touch zones vertically non-overlapping. */
+    #pomelo{left:20%;top:60%;width:19%;height:25%}
+    #tea{left:65%;top:76%;width:16%;height:22%}
+    #grill{left:72%;top:55%;width:20%;height:20%}
 
     #startFallback{position:absolute;inset:0;z-index:40;display:none;place-items:center;border:0;background:rgba(0,0,0,.30);color:white;font:600 18px/1.4 system-ui,-apple-system,"Noto Sans TC",sans-serif;letter-spacing:.08em;cursor:pointer}
     #startFallback.show{display:grid}
