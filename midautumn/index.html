@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
   <meta name="theme-color" content="#050505" />
   <title>花好・月圓｜互動版</title>
-  <meta name="app-version" content="ang-shared-hotspot-v3-20261029" />
+  <meta name="app-version" content="ang-coordinate-router-v4-20261029" />
   <style>
     *{box-sizing:border-box}
     html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050505;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -15,10 +15,10 @@
     video.active{opacity:1}
 
     .hotspot{position:absolute;z-index:20;border:0;padding:0;margin:0;background:transparent;opacity:0;cursor:pointer;pointer-events:none;touch-action:manipulation;border-radius:50%}
-    .hotspot.ready{pointer-events:auto}
-    #pomelo{left:20%;top:57%;width:18%;height:29%}
-    #tea{left:64%;top:74.5%;width:17%;height:24%}
-    #grill{left:73%;top:57%;width:18%;height:17%}
+    .hotspot.ready{pointer-events:none} /* overlays only: tap coordinates are validated in JS */
+    #pomelo{left:20%;top:60%;width:20%;height:26%}
+    #tea{left:65%;top:76%;width:16%;height:22%}
+    #grill{left:72.5%;top:62%;width:20%;height:13%}
 
     #startFallback{position:absolute;inset:0;z-index:40;display:none;place-items:center;border:0;background:rgba(0,0,0,.30);color:white;font:600 18px/1.4 system-ui,-apple-system,"Noto Sans TC",sans-serif;letter-spacing:.08em;cursor:pointer}
     #startFallback.show{display:grid}
@@ -28,6 +28,8 @@
     body.debug #tea.ready{background:rgba(0,211,255,.32);outline-color:#66e7ff}
     body.debug #grill.ready{background:rgba(255,62,62,.29);outline-color:#ff6565}
     body.debug .hotspot.ready::after{content:attr(aria-label);pointer-events:none}
+    #touchMarker{display:none;position:absolute;z-index:60;width:18px;height:18px;border:3px solid #fff;background:#ff6500;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 2px #000;pointer-events:none}
+    body.debug #touchMarker{display:block}
     #debugInfo{display:none;position:absolute;left:10px;top:10px;z-index:50;padding:7px 10px;border-radius:7px;background:rgba(0,0,0,.68);color:#fff;font:12px/1.4 monospace;pointer-events:none}
     body.debug #debugInfo{display:block}
 
@@ -115,6 +117,7 @@
 
       <button id="startFallback" type="button">點一下開始</button>
       <div id="debugInfo"></div>
+      <div id="touchMarker" aria-hidden="true"></div>
     </section>
   </main>
 
@@ -198,6 +201,7 @@
     const viewport = document.getElementById('viewport');
     const startFallback = document.getElementById('startFallback');
     const debugInfo = document.getElementById('debugInfo');
+    const touchMarker = document.getElementById('touchMarker');
     const buttons = {
       pomelo: document.getElementById('pomelo'),
       grill: document.getElementById('grill'),
@@ -208,15 +212,42 @@
     let standby = b;
     let currentClip = 1;
     let lastAction = "-";
+    let lastTouch = "-";
+    let tracking = null;
     let busy = false;
     let pendingAction = null;
     let endingStarted = false;
 
+    // Calibrated positions on the original 16:9 video. No tea/grill intersection.
+    const ZONES = Object.freeze({
+      pomelo:{x:30,y:73,rx:10,ry:13},
+      grill:{x:82.5,y:68.5,rx:10,ry:6.5},
+      tea:{x:73,y:87,rx:8,ry:11}
+    });
+    function readPosition(event){
+      const rect=viewport.getBoundingClientRect();
+      return {x:100*(event.clientX-rect.left)/rect.width,y:100*(event.clientY-rect.top)/rect.height};
+    }
+    function findAction(p){
+      const matches=[];
+      for(const [action,z] of Object.entries(ZONES)){
+        const d=Math.pow((p.x-z.x)/z.rx,2)+Math.pow((p.y-z.y)/z.ry,2);
+        if(d<=1) matches.push({action,d});
+      }
+      matches.sort((a,b)=>a.d-b.d);
+      return matches[0]?.action || null;
+    }
+    function markTap(p,action){
+      lastTouch=`${p.x.toFixed(1)}%,${p.y.toFixed(1)}% => ${action||"none"}`;
+      touchMarker.style.left=p.x+"%";
+      touchMarker.style.top=p.y+"%";
+      updateDebug();
+    }
     const key = () => `${+state.pomelo}${+state.grill}${+state.tea}`;
     const completedCount = () => Object.values(state).filter(Boolean).length;
 
     function updateDebug(){
-      debugInfo.textContent = `clip=${currentClip}  state(PGT)=${key()}  last=${lastAction}  busy=${busy?'yes':'no'}  ending=${endingStarted?'yes':'no'}`;
+      debugInfo.textContent = `clip=${currentClip}  state(PGT)=${key()}  last=${lastAction}  touch=${lastTouch}  busy=${busy?'yes':'no'}  ending=${endingStarted?'yes':'no'}`;
     }
 
     function disableAll(){
@@ -367,15 +398,30 @@
     a.addEventListener('ended',onEnded);
     b.addEventListener('ended',onEnded);
 
-    for (const [action,btn] of Object.entries(buttons)) {
-      btn.addEventListener('click',(event) => {
-        if ([11,12,13].includes(currentClip)) return;
-        if (state[action]) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
+    // Single event router: down and up must both land inside the same object.
+    viewport.addEventListener('pointerdown', (event) => {
+      if(event.target === startFallback) return;
+      const p=readPosition(event);
+      const action=findAction(p);
+      markTap(p,action);
+      tracking={id:event.pointerId,action};
+    });
+    viewport.addEventListener('pointerup', (event) => {
+      if(!tracking || tracking.id !== event.pointerId) return;
+      const prior=tracking;
+      tracking=null;
+      if(event.target === startFallback) return;
+      const p=readPosition(event);
+      const action=findAction(p);
+      markTap(p,action);
+      if(prior.action && action===prior.action && !state[action]){
         choose(action);
+      }
+    });
+    viewport.addEventListener('pointercancel',()=>{tracking=null;});
+    for(const [action,btn] of Object.entries(buttons)){
+      btn.addEventListener('click',event=>{
+        if(event.detail===0) choose(action); // keyboard accessibility
       });
     }
 
