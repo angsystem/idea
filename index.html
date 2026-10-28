@@ -1,104 +1,87 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-  <meta name="theme-color" content="#08090e">
-  <meta name="description" content="ANG 花好月圓 Canva 網站｜手機橫向滿版外框">
-  <title>花好・月圓｜ANG 橫向互動版</title>
-  <style>
-    :root{color-scheme:dark;--bg:#08090e;--gold:#e9c789}
-    *{box-sizing:border-box}
-    html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
-    #stage{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:var(--bg)}
-    #canvaSite{display:block;border:0;width:100%;height:100%;background:var(--bg)}
-    .external-link{position:fixed;z-index:10;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid #f0d29a55;border-radius:999px;background:#090b13c9;color:#fff;font-size:12px;font-weight:700;text-decoration:none;box-shadow:0 3px 12px #0006;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-    .external-link:focus-visible,.action:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
-    #phoneGuard,#tabletHint{position:fixed;inset:0;z-index:99;display:none;align-items:center;justify-content:center;padding:24px max(18px,env(safe-area-inset-left)) max(24px,env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% 10%,#342916 0%,#0b0d15 46%,#05060b 100%);color:#fff;text-align:center}
-    .guard-card{width:min(100%,440px);padding:26px 22px 25px;border:1px solid #e9c78955;border-radius:22px;background:#ffffff0b;box-shadow:0 12px 44px #0007}
-    .rotate-icon{display:block;font-size:62px;line-height:1.1;margin:0 0 12px;color:var(--gold);animation:tilt 2.8s ease-in-out infinite alternate;transform-origin:center}
-    @keyframes tilt{0%,15%{transform:rotate(-13deg)}85%,100%{transform:rotate(32deg)}}
-    h1{font-size:clamp(21px,6vw,26px);letter-spacing:.06em;margin:0 0 12px}
-    p{font-size:15px;line-height:1.85;color:#e6e5df;margin:0}
-    .muted{font-size:12px;opacity:.75;margin-top:10px}
-    .controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:21px}
-    .action{appearance:none;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:11px 16px;border:0;border-radius:12px;background:var(--gold);color:#201809;text-decoration:none;font-size:14px;font-weight:800;cursor:pointer}
-    .action.secondary{background:#ffffff15;color:#fff;border:1px solid #ffffff3a}
-    #lockStatus{min-height:1em;max-width:360px;margin:12px auto 0;line-height:1.6;font-size:12px;color:#f5dba7}
-    @media(prefers-reduced-motion:reduce){.rotate-icon{animation:none}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080b14">
+<meta name="description" content="ANG 中秋互動網頁入口：手機橫向後開啟 Canva 原站">
+<title>花好・月圓｜ANG 橫向入口</title>
+<style>
+  :root{color-scheme:dark;--gold:#f1cf91;--ink:#070a12}
+  *{box-sizing:border-box}
+  html,body{margin:0;min-width:100%;min-height:100%;background:var(--ink);color:#fff}
+  body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif}
+  .shell{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:calc(22px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));background:radial-gradient(ellipse at 50% 15%,#453018 0%,#12131a 38%,#06080f 84%);}
+  .card{width:min(100%,480px);text-align:center;padding:36px 24px 28px;border-radius:26px;border:1px solid #edc88c55;background:linear-gradient(160deg,#ffffff14,#ffffff05);box-shadow:0 15px 65px #0009}
+  .mark{font-size:clamp(62px,10vw,82px);color:var(--gold);line-height:1.1;display:block;margin-bottom:20px}
+  h1{font-size:clamp(24px,5vw,30px);letter-spacing:.07em;margin:0 0 14px}
+  p{margin:0;color:#e7e5e3;line-height:1.8;font-size:15px}
+  .small{font-size:12px;opacity:.73;margin-top:12px}
+  .actions{display:flex;flex-direction:column;gap:12px;margin:23px auto 0;max-width:350px}
+  .action{border:1px solid transparent;display:flex;min-height:52px;align-items:center;justify-content:center;padding:12px 18px;border-radius:16px;text-decoration:none;cursor:pointer;font:700 16px/1.35 inherit;background:var(--gold);color:#261b0d}
+  .action.secondary{background:#ffffff17;color:#fff;border:1px solid #ffffff37}
+  .action:focus-visible{outline:3px solid white;outline-offset:3px}
+  .busy .mark{animation:pulse 1.5s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.55}}
+  .error{display:none;color:#f6d1ac;font-size:13px;margin-top:16px}
+  .error.show{display:block}
+  .hint{display:none}
+  body.phone-portrait .hint{display:block}
+  body.phone-portrait .go{display:none}
+  body:not(.phone-portrait) .hint{display:none}
+  body.phone-portrait .direct{display:flex}
+  .noscript{padding:12px;text-align:center}
+  @media(prefers-reduced-motion:reduce){.busy .mark{animation:none}}
+</style>
 </head>
 <body>
-  <main id="stage" aria-label="花好月圓 Canva 原站互動內容">
-    <iframe id="canvaSite" title="花好月圓 Canva 互動網站" src="https://angendenmf.my.canva.site/mfidea/" loading="eager" allow="fullscreen; autoplay; clipboard-write" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-  </main>
-  <a class="external-link" href="https://angendenmf.my.canva.site/mfidea/" target="_blank" rel="noopener noreferrer" aria-label="如內嵌網站未顯示，開啟 Canva 原網站">↗ 開啟原站</a>
-  <section id="phoneGuard" aria-label="請將手機橫向" aria-live="polite">
-    <div class="guard-card">
-      <span class="rotate-icon" aria-hidden="true">▯↻</span>
-      <h1>請將手機橫向</h1>
-      <p>為了保留原版按鈕與畫面比例，<br>請將手機旋轉 90° 後使用。</p>
-      <p class="muted">如果畫面無法旋轉，請先關閉手機的直向鎖定。</p>
-      <div class="controls">
-        <button id="landscapeBtn" type="button" class="action">嘗試全螢幕橫向</button>
-        <a class="action secondary" href="https://angendenmf.my.canva.site/mfidea/" target="_blank" rel="noopener noreferrer">開啟原站</a>
+  <main class="shell">
+    <section class="card" aria-label="ANG 中秋互動網頁入口">
+      <span class="mark" aria-hidden="true">☾</span>
+      <h1>花好・月圓</h1>
+      <div class="hint" id="turnHint">
+        <p>請將手機<strong>橫向</strong>，<br>就會直接開啟原本的 Canva 互動網站。</p>
+        <p class="small">若無法旋轉，請關閉手機的直向鎖定。</p>
       </div>
-      <p id="lockStatus" role="status"></p>
-    </div>
-  </section>
-  <section id="tabletHint" aria-label="平板橫向建議">
-    <div class="guard-card">
-      <span class="rotate-icon" aria-hidden="true">▭</span>
-      <h1>建議使用橫向</h1>
-      <p>平板橫向觀看，可完整呈現網站構圖和按鈕。</p>
-      <div class="controls"><button id="tabletDismiss" type="button" class="action">知道了，繼續瀏覽</button></div>
-    </div>
-  </section>
-  <script>
-  (() => {
-    'use strict';
-    const guard = document.getElementById('phoneGuard');
-    const tablet = document.getElementById('tabletHint');
-    const lockStatus = document.getElementById('lockStatus');
-    const isTouch = () => navigator.maxTouchPoints > 0 || matchMedia('(pointer:coarse)').matches;
-    const deviceKind = () => {
-      const ua = navigator.userAgent || '';
-      if (/iPad/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) || (/Android/i.test(ua) && !/Mobile/i.test(ua))) return 'tablet';
-      if (/iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua)) return 'phone';
-      const shortSide = Math.min(screen.width||innerWidth, screen.height||innerHeight);
-      if (isTouch() && shortSide >= 600) return 'tablet';
-      if (isTouch() && shortSide < 600) return 'phone';
-      return 'desktop';
-    };
-    const kind = deviceKind();
-    let dismissed = false;
-    try { dismissed = sessionStorage.getItem('ang-mfidea-tablet-hint')==='1'; } catch (_) {}
-    function refresh() {
-      const portrait = matchMedia('(orientation:portrait)').matches;
-      const phoneBlocked = kind==='phone' && portrait;
-      guard.style.display = phoneBlocked?'flex':'none';
-      tablet.style.display = kind==='tablet' && portrait && !dismissed?'flex':'none';
-      document.body.classList.toggle('guarded',phoneBlocked);
+      <div class="go" id="opening">
+        <p>正在開啟 Canva 原站⋯</p>
+        <p class="small">不再使用 iframe，避免「拒絕連線」訊息。</p>
+      </div>
+      <div class="actions">
+        <a class="action" id="enter" href="https://angendenmf.my.canva.site/mfidea/">立即進入 Canva 原站</a>
+        <a class="action secondary" href="https://idea.angsystem.com/midautumn/">開啟 ANG 原中秋互動版</a>
+      </div>
+      <p class="small">Canva 原站的影片、按鈕與內部跳頁由 Canva 提供。</p>
+      <p class="error" id="redirectError" role="status">如果沒有自動開啟，請按「立即進入 Canva 原站」。</p>
+    </section>
+  </main>
+  <noscript><div class="noscript">JavaScript 已關閉，請直接點選「立即進入 Canva 原站」。</div></noscript>
+<script>
+(function(){
+  'use strict';
+  const URL='https://angendenmf.my.canva.site/mfidea/';
+  const ua=navigator.userAgent||'';
+  const points=navigator.maxTouchPoints||0;
+  const tablet=/iPad/i.test(ua)||(/Macintosh/i.test(ua)&&points>1)||(/Android/i.test(ua)&&!/Mobile/i.test(ua));
+  const phone=!tablet&&(/iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua)||(points>0&&Math.min(screen.width||innerWidth,screen.height||innerHeight)<600));
+  const enter=document.getElementById('enter');
+  let navigating=false;
+  function isPortrait(){return window.matchMedia('(orientation:portrait)').matches}
+  function update(){
+    const blocked=phone&&isPortrait();
+    document.body.classList.toggle('phone-portrait',blocked);
+    document.body.classList.toggle('busy',!blocked);
+    if(!blocked&&!navigating){
+      navigating=true;
+      // Go straight to the Canva top-level URL; Canva does not allow embedding.
+      window.location.replace(URL);
     }
-    document.getElementById('tabletDismiss').addEventListener('click', () => {
-      dismissed=true;
-      try {sessionStorage.setItem('ang-mfidea-tablet-hint','1');}catch(_){}
-      refresh();
-    });
-    document.getElementById('landscapeBtn').addEventListener('click',async()=>{
-      lockStatus.textContent='';
-      try {
-        if (!document.fullscreenElement && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
-        if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
-        else throw new Error('此瀏覽器未開放自動鎖定橫向');
-        refresh();
-      }catch(e){ lockStatus.textContent='此手機瀏覽器不能強制改變系統方向，請手動橫放手機並關閉直向鎖定。'; }
-    });
-    window.addEventListener('resize',refresh,{passive:true});
-    window.addEventListener('orientationchange',refresh,{passive:true});
-    document.addEventListener('fullscreenchange',refresh);
-    refresh();
-  })();
-  </script>
+  }
+  enter.addEventListener('click',function(){navigating=true});
+  window.addEventListener('resize',update,{passive:true});
+  window.addEventListener('orientationchange',update,{passive:true});
+  update();
+})();
+</script>
 </body>
 </html>
