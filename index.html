@@ -1,87 +1,397 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#080b14">
-<meta name="description" content="ANG 中秋互動網頁入口：手機橫向後開啟 Canva 原站">
-<title>花好・月圓｜ANG 橫向入口</title>
-<style>
-  :root{color-scheme:dark;--gold:#f1cf91;--ink:#070a12}
-  *{box-sizing:border-box}
-  html,body{margin:0;min-width:100%;min-height:100%;background:var(--ink);color:#fff}
-  body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft JhengHei",sans-serif}
-  .shell{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:calc(22px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));background:radial-gradient(ellipse at 50% 15%,#453018 0%,#12131a 38%,#06080f 84%);}
-  .card{width:min(100%,480px);text-align:center;padding:36px 24px 28px;border-radius:26px;border:1px solid #edc88c55;background:linear-gradient(160deg,#ffffff14,#ffffff05);box-shadow:0 15px 65px #0009}
-  .mark{font-size:clamp(62px,10vw,82px);color:var(--gold);line-height:1.1;display:block;margin-bottom:20px}
-  h1{font-size:clamp(24px,5vw,30px);letter-spacing:.07em;margin:0 0 14px}
-  p{margin:0;color:#e7e5e3;line-height:1.8;font-size:15px}
-  .small{font-size:12px;opacity:.73;margin-top:12px}
-  .actions{display:flex;flex-direction:column;gap:12px;margin:23px auto 0;max-width:350px}
-  .action{border:1px solid transparent;display:flex;min-height:52px;align-items:center;justify-content:center;padding:12px 18px;border-radius:16px;text-decoration:none;cursor:pointer;font:700 16px/1.35 inherit;background:var(--gold);color:#261b0d}
-  .action.secondary{background:#ffffff17;color:#fff;border:1px solid #ffffff37}
-  .action:focus-visible{outline:3px solid white;outline-offset:3px}
-  .busy .mark{animation:pulse 1.5s ease-in-out infinite}
-  @keyframes pulse{50%{opacity:.55}}
-  .error{display:none;color:#f6d1ac;font-size:13px;margin-top:16px}
-  .error.show{display:block}
-  .hint{display:none}
-  body.phone-portrait .hint{display:block}
-  body.phone-portrait .go{display:none}
-  body:not(.phone-portrait) .hint{display:none}
-  body.phone-portrait .direct{display:flex}
-  .noscript{padding:12px;text-align:center}
-  @media(prefers-reduced-motion:reduce){.busy .mark{animation:none}}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#050505" />
+  <title>花好・月圓｜ANG 原生互動網站</title>
+  <meta name="app-version" content="ang-selfhost-landscape-v1" />
+  <meta name="description" content="ANG 花好月圓：柚子、烤肉、茶三種互動，14 段原生影片，手機橫向使用。" />
+  <style>
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050505;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    #stage{position:fixed;inset:0;width:100%;height:100%;height:100dvh;display:grid;place-items:center;background:#050505;overflow:hidden}
+    #viewport{position:relative;width:min(100vw,calc(100dvh * 16 / 9));max-height:100dvh;aspect-ratio:16/9;overflow:hidden;background:#050505}
+    video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;background:#050505}
+    video.active{opacity:1}
+
+    .hotspot{position:absolute;z-index:20;border:0;padding:0;margin:0;background:transparent;opacity:0;cursor:pointer;pointer-events:none;touch-action:manipulation;border-radius:50%}
+    .hotspot.ready{pointer-events:auto}
+    #pomelo{left:9%;top:48%;width:22%;height:29%}
+    #tea{left:59%;top:59%;width:17%;height:29%}
+    #grill{left:74%;top:47%;width:20%;height:31%}
+
+    #startFallback{position:absolute;inset:0;z-index:40;display:none;place-items:center;border:0;background:rgba(0,0,0,.30);color:white;font:600 18px/1.4 system-ui,-apple-system,"Noto Sans TC",sans-serif;letter-spacing:.08em;cursor:pointer}
+    #startFallback.show{display:grid}
+
+    body.debug .hotspot.ready{opacity:1;background:rgba(255,255,255,.13);outline:2px dashed rgba(255,255,255,.85)}
+    #debugInfo{display:none;position:absolute;left:10px;top:10px;z-index:50;padding:7px 10px;border-radius:7px;background:rgba(0,0,0,.68);color:#fff;font:12px/1.4 monospace;pointer-events:none}
+    body.debug #debugInfo{display:block}
+
+    #phoneRotateGuard,
+    #tabletHint{
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      background:rgba(5,5,5,.94);
+      color:#fff;
+      font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;
+      text-align:center;
+    }
+    #phoneRotateGuard .orientation-card,
+    #tabletHint .orientation-card{
+      max-width:420px;
+      padding:28px 24px;
+      border:1px solid rgba(255,255,255,.24);
+      border-radius:20px;
+      background:rgba(255,255,255,.08);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+    }
+    .orientation-icon{
+      display:block;
+      font-size:52px;
+      line-height:1;
+      margin-bottom:14px;
+    }
+    .orientation-title{
+      margin:0 0 8px;
+      font-size:22px;
+      font-weight:700;
+      letter-spacing:.04em;
+    }
+    .orientation-text{
+      margin:0;
+      font-size:15px;
+      line-height:1.7;
+      opacity:.84;
+    }
+    #tabletHint button{
+      margin-top:18px;
+      padding:10px 18px;
+      border:0;
+      border-radius:999px;
+      background:#fff;
+      color:#111;
+      font:700 14px/1 system-ui,-apple-system,"Noto Sans TC",sans-serif;
+      cursor:pointer;
+    }
+  </style>
 </head>
 <body>
-  <main class="shell">
-    <section class="card" aria-label="ANG 中秋互動網頁入口">
-      <span class="mark" aria-hidden="true">☾</span>
-      <h1>花好・月圓</h1>
-      <div class="hint" id="turnHint">
-        <p>請將手機<strong>橫向</strong>，<br>就會直接開啟原本的 Canva 互動網站。</p>
-        <p class="small">若無法旋轉，請關閉手機的直向鎖定。</p>
-      </div>
-      <div class="go" id="opening">
-        <p>正在開啟 Canva 原站⋯</p>
-        <p class="small">不再使用 iframe，避免「拒絕連線」訊息。</p>
-      </div>
-      <div class="actions">
-        <a class="action" id="enter" href="https://angendenmf.my.canva.site/mfidea/">立即進入 Canva 原站</a>
-        <a class="action secondary" href="https://idea.angsystem.com/midautumn/">開啟 ANG 原中秋互動版</a>
-      </div>
-      <p class="small">Canva 原站的影片、按鈕與內部跳頁由 Canva 提供。</p>
-      <p class="error" id="redirectError" role="status">如果沒有自動開啟，請按「立即進入 Canva 原站」。</p>
+
+  <div id="phoneRotateGuard" aria-live="polite">
+    <div class="orientation-card">
+      <span class="orientation-icon" aria-hidden="true">↻</span>
+      <h2 class="orientation-title">請將手機橫向</h2>
+      <p class="orientation-text">ANG 互動影片採用橫向 16:9 版面。請關閉直向鎖定，再將手機橫放以進行柚子、烤肉與茶三種互動。</p>
+    </div>
+  </div>
+
+  <div id="tabletHint" aria-live="polite">
+    <div class="orientation-card">
+      <span class="orientation-icon" aria-hidden="true">▭</span>
+      <h2 class="orientation-title">建議使用橫向</h2>
+      <p class="orientation-text">平板橫向觀看會有較完整的互動體驗。</p>
+      <button id="tabletHintClose" type="button">知道了</button>
+    </div>
+  </div>
+
+  <main id="stage" aria-label="ANG 花好月圓互動影片，三種物件按鈕">
+    <section id="viewport">
+      <video id="playerA" class="active" muted playsinline preload="metadata"></video>
+      <video id="playerB" muted playsinline preload="metadata"></video>
+
+      <button id="pomelo" class="hotspot" type="button" aria-label="剝柚子"></button>
+      <button id="grill" class="hotspot" type="button" aria-label="烤肉翻面"></button>
+      <button id="tea" class="hotspot" type="button" aria-label="沏茶"></button>
+
+      <button id="startFallback" type="button">點一下開始</button>
+      <div id="debugInfo"></div>
     </section>
   </main>
-  <noscript><div class="noscript">JavaScript 已關閉，請直接點選「立即進入 Canva 原站」。</div></noscript>
-<script>
-(function(){
-  'use strict';
-  const URL='https://angendenmf.my.canva.site/mfidea/';
-  const ua=navigator.userAgent||'';
-  const points=navigator.maxTouchPoints||0;
-  const tablet=/iPad/i.test(ua)||(/Macintosh/i.test(ua)&&points>1)||(/Android/i.test(ua)&&!/Mobile/i.test(ua));
-  const phone=!tablet&&(/iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua)||(points>0&&Math.min(screen.width||innerWidth,screen.height||innerHeight)<600));
-  const enter=document.getElementById('enter');
-  let navigating=false;
-  function isPortrait(){return window.matchMedia('(orientation:portrait)').matches}
-  function update(){
-    const blocked=phone&&isPortrait();
-    document.body.classList.toggle('phone-portrait',blocked);
-    document.body.classList.toggle('busy',!blocked);
-    if(!blocked&&!navigating){
-      navigating=true;
-      // Go straight to the Canva top-level URL; Canva does not allow embedding.
-      window.location.replace(URL);
+
+  <script>
+  (() => {
+    const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
+    if (DEBUG) document.body.classList.add('debug');
+
+    const phoneRotateGuard = document.getElementById('phoneRotateGuard');
+    const tabletHint = document.getElementById('tabletHint');
+    const tabletHintClose = document.getElementById('tabletHintClose');
+
+    function getDeviceKind(){
+      const ua = navigator.userAgent || '';
+      const touchPoints = navigator.maxTouchPoints || 0;
+      const shortestSide = Math.min(window.innerWidth, window.innerHeight);
+      const isIPad = /iPad/i.test(ua) || (/Macintosh/i.test(ua) && touchPoints > 1);
+      const isAndroidTablet = /Android/i.test(ua) && !/Mobile/i.test(ua);
+      const isTablet = isIPad || isAndroidTablet || (touchPoints > 0 && shortestSide >= 600);
+      if (isTablet) return 'tablet';
+      const isPhoneUA = /iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua);
+      const isPhoneSize = touchPoints > 0 && shortestSide < 600;
+      if (isPhoneUA || isPhoneSize) return 'phone';
+      return 'desktop';
     }
-  }
-  enter.addEventListener('click',function(){navigating=true});
-  window.addEventListener('resize',update,{passive:true});
-  window.addEventListener('orientationchange',update,{passive:true});
-  update();
-})();
-</script>
+
+    let tabletHintDismissed = sessionStorage.getItem('moon-tablet-hint-dismissed') === '1';
+
+    function updateOrientationUI(){
+      const kind = getDeviceKind();
+      const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+      if (kind === 'phone') {
+        phoneRotateGuard.style.display = isPortrait ? 'flex' : 'none';
+        tabletHint.style.display = 'none';
+        return;
+      }
+      phoneRotateGuard.style.display = 'none';
+      if (kind === 'tablet' && isPortrait && !tabletHintDismissed) {
+        tabletHint.style.display = 'flex';
+      } else {
+        tabletHint.style.display = 'none';
+      }
+    }
+
+    tabletHintClose?.addEventListener('click', () => {
+      tabletHintDismissed = true;
+      sessionStorage.setItem('moon-tablet-hint-dismissed', '1');
+      tabletHint.style.display = 'none';
+    });
+
+    window.addEventListener('resize', updateOrientationUI);
+    window.addEventListener('orientationchange', () => setTimeout(updateOrientationUI, 120));
+    updateOrientationUI();
+
+    const clip = n => `./midautumn/video/${String(n).padStart(2,'0')}.mp4`;
+    const state = { pomelo:false, grill:false, tea:false };
+
+    const transitions = {
+      grill: {
+        '000': 2,
+        '001': 5,
+        '100': 10,
+        '101': 13
+      },
+      tea: {
+        '000': 4,
+        '010': 6,
+        '100': 8,
+        '110': 11
+      },
+      pomelo: {
+        '000': 3,
+        '001': 7,
+        '010': 9,
+        '011': 12
+      }
+    };
+
+    const a = document.getElementById('playerA');
+    const b = document.getElementById('playerB');
+    const viewport = document.getElementById('viewport');
+    const startFallback = document.getElementById('startFallback');
+    const debugInfo = document.getElementById('debugInfo');
+    const buttons = {
+      pomelo: document.getElementById('pomelo'),
+      grill: document.getElementById('grill'),
+      tea: document.getElementById('tea')
+    };
+
+    let active = a;
+    let standby = b;
+    let currentClip = 1;
+    let busy = false;
+    let pendingAction = null;
+    let endingStarted = false;
+
+    const key = () => `${+state.pomelo}${+state.grill}${+state.tea}`;
+    const completedCount = () => Object.values(state).filter(Boolean).length;
+
+    function updateDebug(){
+      debugInfo.textContent = `clip=${currentClip}  state(PGT)=${key()}  busy=${busy?'yes':'no'}  ending=${endingStarted?'yes':'no'}`;
+    }
+
+    function disableAll(){
+      Object.values(buttons).forEach(btn => {
+        btn.classList.remove('ready');
+        btn.disabled = true;
+      });
+      updateDebug();
+    }
+
+    function enableRemaining(){
+      disableAll();
+      if (busy || endingStarted || [11,12,13].includes(currentClip)) return;
+      for (const action of ['pomelo','grill','tea']) {
+        if (!state[action]) {
+          buttons[action].disabled = false;
+          buttons[action].classList.add('ready');
+        }
+      }
+      updateDebug();
+    }
+
+    function preloadCandidates(){
+      // 不同時預載候選影片，避免手機搶頻寬。
+    }
+
+    async function swapAndPlay(n, action=null){
+      busy = true;
+      pendingAction = action;
+      disableAll();
+
+      standby.preload = 'auto';
+      standby.src = clip(n);
+      standby.currentTime = 0;
+      standby.load();
+
+      try {
+        if (standby.readyState < 2) {
+          await new Promise((resolve,reject) => {
+            const ok = () => { cleanup(); resolve(); };
+            const bad = () => { cleanup(); reject(new Error('video load error')); };
+            const cleanup = () => {
+              standby.removeEventListener('loadeddata', ok);
+              standby.removeEventListener('error', bad);
+            };
+            standby.addEventListener('loadeddata', ok, { once:true });
+            standby.addEventListener('error', bad, { once:true });
+          });
+        }
+      } catch(e) {
+        busy = false;
+        pendingAction = null;
+        enableRemaining();
+        return;
+      }
+
+      const old = active;
+      const next = standby;
+      next.currentTime = 0;
+      next.classList.add('active');
+      old.classList.remove('active');
+      active = next;
+      standby = old;
+      currentClip = n;
+      updateDebug();
+
+      try {
+        await active.play();
+        startFallback.classList.remove('show');
+      } catch(e) {
+        startFallback.classList.add('show');
+      }
+    }
+
+    async function choose(action){
+      if ([11,12,13].includes(currentClip)) return;
+      if (busy || endingStarted || state[action]) return;
+      const k = key();
+      const n = transitions[action][k];
+      if (!n) return;
+      await swapAndPlay(n, action);
+    }
+
+    async function startEnding(){
+      if (busy || endingStarted) return;
+      endingStarted = true;
+      disableAll();
+      await swapAndPlay(14, null);
+    }
+
+    function resetToStart(){
+      state.pomelo = false;
+      state.grill = false;
+      state.tea = false;
+      pendingAction = null;
+      endingStarted = false;
+      busy = true;
+      disableAll();
+
+      active.pause();
+      standby.pause();
+      standby.removeAttribute('src');
+      standby.load();
+      active.preload = 'auto';
+      active.src = clip(1);
+      active.currentTime = 0;
+      active.load();
+      currentClip = 1;
+      updateDebug();
+
+      active.play().catch(() => startFallback.classList.add('show'));
+    }
+
+    function onEnded(e){
+      if (e.currentTarget !== active) return;
+
+      if (currentClip === 14) {
+        resetToStart();
+        return;
+      }
+
+      if (currentClip === 1) {
+        busy = false;
+        pendingAction = null;
+        enableRemaining();
+        preloadCandidates();
+        return;
+      }
+
+      if (pendingAction) {
+        state[pendingAction] = true;
+        pendingAction = null;
+      }
+      busy = false;
+
+      if (completedCount() === 3) {
+        disableAll();
+        updateDebug();
+        return;
+      }
+
+      enableRemaining();
+      preloadCandidates();
+    }
+
+    a.addEventListener('ended',onEnded);
+    b.addEventListener('ended',onEnded);
+
+    for (const [action,btn] of Object.entries(buttons)) {
+      btn.addEventListener('click',(event) => {
+        if ([11,12,13].includes(currentClip)) return;
+        if (state[action]) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        choose(action);
+      });
+    }
+
+    viewport.addEventListener('click', (event) => {
+      if (![11,12,13].includes(currentClip) || busy || endingStarted) return;
+      event.preventDefault();
+      event.stopPropagation();
+      startEnding();
+    });
+
+    startFallback.addEventListener('click', async () => {
+      startFallback.classList.remove('show');
+      try { await active.play(); } catch(_) {}
+    });
+
+    a.preload = 'auto';
+    a.src = clip(1);
+    a.load();
+    busy = true;
+    updateDebug();
+    a.play().catch(() => startFallback.classList.add('show'));
+  })();
+  </script>
 </body>
 </html>
