@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#050505" />
+  <title>花好・月圓｜ANG IDEA 互動作品</title>
+  <meta name="app-version" content="ang-coordinate-router-v4-20261029" />
+  <meta name="description" content="ANG 花好月圓：柚子、烤肉、茶三種互動，14 段原生影片，手機橫向使用。" />
+  <style>
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050505;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    #stage{position:fixed;inset:0;width:100%;height:100%;height:100dvh;display:grid;place-items:center;background:#050505;overflow:hidden}
+    #viewport{position:relative;width:min(100vw,calc(100dvh * 16 / 9));max-height:100dvh;aspect-ratio:16/9;overflow:hidden;background:#050505}
+    video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;background:#050505}
+    video.active{opacity:1}
+
+    .hotspot{position:absolute;z-index:20;border:0;padding:0;margin:0;background:transparent;opacity:0;cursor:pointer;pointer-events:none;touch-action:manipulation;border-radius:50%}
+    .hotspot.ready{pointer-events:none} /* overlays only: tap coordinates are validated in JS */
+    /* Real image coordinates: pomelo on left, grill at upper right, teapot at lower center-right. Keep grill and teapot touch zones vertically non-overlapping. */
+    #pomelo{left:20%;top:60%;width:20%;height:26%}
+    #tea{left:65%;top:76%;width:16%;height:22%}
+    #grill{left:72.5%;top:62%;width:20%;height:13%}
+
+    #startFallback{position:absolute;inset:0;z-index:40;display:none;place-items:center;border:0;background:rgba(0,0,0,.30);color:white;font:600 18px/1.4 system-ui,-apple-system,"Noto Sans TC",sans-serif;letter-spacing:.08em;cursor:pointer}
+    #startFallback.show{display:grid}
+
+    body.debug .hotspot.ready{opacity:1;outline:2px dashed rgba(255,255,255,.9);color:#fff;font:bold 13px system-ui;display:flex;justify-content:center;align-items:center;text-shadow:0 1px 2px #000}
+    body.debug #pomelo.ready{background:rgba(255,214,10,.34);outline-color:#ffda51}
+    body.debug #tea.ready{background:rgba(0,211,255,.32);outline-color:#66e7ff}
+    body.debug #grill.ready{background:rgba(255,62,62,.29);outline-color:#ff6565}
+    body.debug .hotspot.ready::after{content:attr(aria-label);pointer-events:none}
+    #touchMarker{display:none;position:absolute;z-index:60;width:18px;height:18px;border:3px solid #fff;background:#ff6500;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 2px #000;pointer-events:none}
+    body.debug #touchMarker{display:block}
+    #debugInfo{display:none;position:absolute;left:10px;top:10px;z-index:50;padding:7px 10px;border-radius:7px;background:rgba(0,0,0,.68);color:#fff;font:12px/1.4 monospace;pointer-events:none}
+    body.debug #debugInfo{display:block}
+
+    #phoneRotateGuard,
+    #tabletHint{
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      background:rgba(5,5,5,.94);
+      color:#fff;
+      font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;
+      text-align:center;
+    }
+    #phoneRotateGuard .orientation-card,
+    #tabletHint .orientation-card{
+      max-width:420px;
+      padding:28px 24px;
+      border:1px solid rgba(255,255,255,.24);
+      border-radius:20px;
+      background:rgba(255,255,255,.08);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+    }
+    .orientation-icon{
+      display:block;
+      font-size:52px;
+      line-height:1;
+      margin-bottom:14px;
+    }
+    .orientation-title{
+      margin:0 0 8px;
+      font-size:22px;
+      font-weight:700;
+      letter-spacing:.04em;
+    }
+    .orientation-text{
+      margin:0;
+      font-size:15px;
+      line-height:1.7;
+      opacity:.84;
+    }
+    #tabletHint button{
+      margin-top:18px;
+      padding:10px 18px;
+      border:0;
+      border-radius:999px;
+      background:#fff;
+      color:#111;
+      font:700 14px/1 system-ui,-apple-system,"Noto Sans TC",sans-serif;
+      cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="phoneRotateGuard" aria-live="polite">
+    <div class="orientation-card">
+      <span class="orientation-icon" aria-hidden="true">↻</span>
+      <h2 class="orientation-title">請將手機橫向</h2>
+      <p class="orientation-text">ANG 互動影片採用橫向 16:9 版面。請關閉直向鎖定，再將手機橫放以進行柚子、烤肉與茶三種互動。</p>
+    </div>
+  </div>
+
+  <div id="tabletHint" aria-live="polite">
+    <div class="orientation-card">
+      <span class="orientation-icon" aria-hidden="true">▭</span>
+      <h2 class="orientation-title">建議使用橫向</h2>
+      <p class="orientation-text">平板橫向觀看會有較完整的互動體驗。</p>
+      <button id="tabletHintClose" type="button">知道了</button>
+    </div>
+  </div>
+
+  <main id="stage" aria-label="ANG 花好月圓互動影片，三種物件按鈕">
+    <section id="viewport">
+      <video id="playerA" class="active" muted playsinline preload="metadata"></video>
+      <video id="playerB" muted playsinline preload="metadata"></video>
+
+      <button id="pomelo" class="hotspot" type="button" aria-label="剝柚子"></button>
+      <button id="grill" class="hotspot" type="button" aria-label="烤肉翻面"></button>
+      <button id="tea" class="hotspot" type="button" aria-label="沏茶"></button>
+
+      <button id="startFallback" type="button">點一下開始</button>
+      <div id="debugInfo"></div>
+      <div id="touchMarker" aria-hidden="true"></div>
+    </section>
+  </main>
+
+  <script>
+  (() => {
+    const DEBUG = new URLSearchParams(location.search).get('debug') === '1';
+    if (DEBUG) document.body.classList.add('debug');
+
+    const phoneRotateGuard = document.getElementById('phoneRotateGuard');
+    const tabletHint = document.getElementById('tabletHint');
+    const tabletHintClose = document.getElementById('tabletHintClose');
+
+    function getDeviceKind(){
+      const ua = navigator.userAgent || '';
+      const touchPoints = navigator.maxTouchPoints || 0;
+      const shortestSide = Math.min(window.innerWidth, window.innerHeight);
+      const isIPad = /iPad/i.test(ua) || (/Macintosh/i.test(ua) && touchPoints > 1);
+      const isAndroidTablet = /Android/i.test(ua) && !/Mobile/i.test(ua);
+      const isTablet = isIPad || isAndroidTablet || (touchPoints > 0 && shortestSide >= 600);
+      if (isTablet) return 'tablet';
+      const isPhoneUA = /iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua);
+      const isPhoneSize = touchPoints > 0 && shortestSide < 600;
+      if (isPhoneUA || isPhoneSize) return 'phone';
+      return 'desktop';
+    }
+
+    let tabletHintDismissed = sessionStorage.getItem('moon-tablet-hint-dismissed') === '1';
+
+    function updateOrientationUI(){
+      const kind = getDeviceKind();
+      const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+      if (kind === 'phone') {
+        phoneRotateGuard.style.display = isPortrait ? 'flex' : 'none';
+        tabletHint.style.display = 'none';
+        return;
+      }
+      phoneRotateGuard.style.display = 'none';
+      if (kind === 'tablet' && isPortrait && !tabletHintDismissed) {
+        tabletHint.style.display = 'flex';
+      } else {
+        tabletHint.style.display = 'none';
+      }
+    }
+
+    tabletHintClose?.addEventListener('click', () => {
+      tabletHintDismissed = true;
+      sessionStorage.setItem('moon-tablet-hint-dismissed', '1');
+      tabletHint.style.display = 'none';
+    });
+
+    window.addEventListener('resize', updateOrientationUI);
+    window.addEventListener('orientationchange', () => setTimeout(updateOrientationUI, 120));
+    updateOrientationUI();
+
+    const clip = n => `/midautumn/video/${String(n).padStart(2,'0')}.mp4`;
+    const state = { pomelo:false, grill:false, tea:false };
+
+    const transitions = {
+      grill: {
+        '000': 2,
+        '001': 5,
+        '100': 10,
+        '101': 13
+      },
+      tea: {
+        '000': 4,
+        '010': 6,
+        '100': 8,
+        '110': 11
+      },
+      pomelo: {
+        '000': 3,
+        '001': 7,
+        '010': 9,
+        '011': 12
+      }
+    };
+
+    const a = document.getElementById('playerA');
+    const b = document.getElementById('playerB');
+    const viewport = document.getElementById('viewport');
+    const startFallback = document.getElementById('startFallback');
+    const debugInfo = document.getElementById('debugInfo');
+    const touchMarker = document.getElementById('touchMarker');
+    const buttons = {
+      pomelo: document.getElementById('pomelo'),
+      grill: document.getElementById('grill'),
+      tea: document.getElementById('tea')
+    };
+
+    let active = a;
+    let standby = b;
+    let currentClip = 1;
+    let lastAction = "-";
+    let lastTouch = "-";
+    let tracking = null;
+    let busy = false;
+    let pendingAction = null;
+    let endingStarted = false;
+
+    // Calibrated positions on the original 16:9 video. No tea/grill intersection.
+    const ZONES = Object.freeze({
+      pomelo:{x:30,y:73,rx:10,ry:13},
+      grill:{x:82.5,y:68.5,rx:10,ry:6.5},
+      tea:{x:73,y:87,rx:8,ry:11}
+    });
+    function readPosition(event){
+      const rect=viewport.getBoundingClientRect();
+      return {x:100*(event.clientX-rect.left)/rect.width,y:100*(event.clientY-rect.top)/rect.height};
+    }
+    function findAction(p){
+      const matches=[];
+      for(const [action,z] of Object.entries(ZONES)){
+        const d=Math.pow((p.x-z.x)/z.rx,2)+Math.pow((p.y-z.y)/z.ry,2);
+        if(d<=1) matches.push({action,d});
+      }
+      matches.sort((a,b)=>a.d-b.d);
+      return matches[0]?.action || null;
+    }
+    function markTap(p,action){
+      lastTouch=`${p.x.toFixed(1)}%,${p.y.toFixed(1)}% => ${action||"none"}`;
+      touchMarker.style.left=p.x+"%";
+      touchMarker.style.top=p.y+"%";
+      updateDebug();
+    }
+    const key = () => `${+state.pomelo}${+state.grill}${+state.tea}`;
+    const completedCount = () => Object.values(state).filter(Boolean).length;
+
+    function updateDebug(){
+      debugInfo.textContent = `clip=${currentClip}  state(PGT)=${key()}  last=${lastAction}  touch=${lastTouch}  busy=${busy?'yes':'no'}  ending=${endingStarted?'yes':'no'}`;
+    }
+
+    function disableAll(){
+      Object.values(buttons).forEach(btn => {
+        btn.classList.remove('ready');
+        btn.disabled = true;
+      });
+      updateDebug();
+    }
+
+    function enableRemaining(){
+      disableAll();
+      if (busy || endingStarted || [11,12,13].includes(currentClip)) return;
+      for (const action of ['pomelo','grill','tea']) {
+        if (!state[action]) {
+          buttons[action].disabled = false;
+          buttons[action].classList.add('ready');
+        }
+      }
+      updateDebug();
+    }
+
+    function preloadCandidates(){
+      // 不同時預載候選影片，避免手機搶頻寬。
+    }
+
+    async function swapAndPlay(n, action=null){
+      busy = true;
+      pendingAction = action;
+      disableAll();
+
+      standby.preload = 'auto';
+      standby.src = clip(n);
+      standby.currentTime = 0;
+      standby.load();
+
+      try {
+        if (standby.readyState < 2) {
+          await new Promise((resolve,reject) => {
+            const ok = () => { cleanup(); resolve(); };
+            const bad = () => { cleanup(); reject(new Error('video load error')); };
+            const cleanup = () => {
+              standby.removeEventListener('loadeddata', ok);
+              standby.removeEventListener('error', bad);
+            };
+            standby.addEventListener('loadeddata', ok, { once:true });
+            standby.addEventListener('error', bad, { once:true });
+          });
+        }
+      } catch(e) {
+        busy = false;
+        pendingAction = null;
+        enableRemaining();
+        return;
+      }
+
+      const old = active;
+      const next = standby;
+      next.currentTime = 0;
+      next.classList.add('active');
+      old.classList.remove('active');
+      active = next;
+      standby = old;
+      currentClip = n;
+      updateDebug();
+
+      try {
+        await active.play();
+        startFallback.classList.remove('show');
+      } catch(e) {
+        startFallback.classList.add('show');
+      }
+    }
+
+    async function choose(action){
+      if ([11,12,13].includes(currentClip)) return;
+      if (busy || endingStarted || state[action]) return;
+      const k = key();
+      const n = transitions[action][k];
+      if (!n) return;
+      lastAction = action;
+      await swapAndPlay(n, action);
+    }
+
+    async function startEnding(){
+      if (busy || endingStarted) return;
+      endingStarted = true;
+      disableAll();
+      await swapAndPlay(14, null);
+    }
+
+    function resetToStart(){
+      lastAction = "-";
+      state.pomelo = false;
+      state.grill = false;
+      state.tea = false;
+      pendingAction = null;
+      endingStarted = false;
+      busy = true;
+      disableAll();
+
+      active.pause();
+      standby.pause();
+      standby.removeAttribute('src');
+      standby.load();
+      active.preload = 'auto';
+      active.src = clip(1);
+      active.currentTime = 0;
+      active.load();
+      currentClip = 1;
+      updateDebug();
+
+      active.play().catch(() => startFallback.classList.add('show'));
+    }
+
+    function onEnded(e){
+      if (e.currentTarget !== active) return;
+
+      if (currentClip === 14) {
+        resetToStart();
+        return;
+      }
+
+      if (currentClip === 1) {
+        busy = false;
+        pendingAction = null;
+        enableRemaining();
+        preloadCandidates();
+        return;
+      }
+
+      if (pendingAction) {
+        state[pendingAction] = true;
+        pendingAction = null;
+      }
+      busy = false;
+
+      if (completedCount() === 3) {
+        disableAll();
+        updateDebug();
+        return;
+      }
+
+      enableRemaining();
+      preloadCandidates();
+    }
+
+    a.addEventListener('ended',onEnded);
+    b.addEventListener('ended',onEnded);
+
+    // Single event router: down and up must both land inside the same object.
+    viewport.addEventListener('pointerdown', (event) => {
+      if(event.target === startFallback) return;
+      const p=readPosition(event);
+      const action=findAction(p);
+      markTap(p,action);
+      tracking={id:event.pointerId,action};
+    });
+    viewport.addEventListener('pointerup', (event) => {
+      if(!tracking || tracking.id !== event.pointerId) return;
+      const prior=tracking;
+      tracking=null;
+      if(event.target === startFallback) return;
+      const p=readPosition(event);
+      const action=findAction(p);
+      markTap(p,action);
+      if(prior.action && action===prior.action && !state[action]){
+        choose(action);
+      }
+    });
+    viewport.addEventListener('pointercancel',()=>{tracking=null;});
+    for(const [action,btn] of Object.entries(buttons)){
+      btn.addEventListener('click',event=>{
+        if(event.detail===0) choose(action); // keyboard accessibility
+      });
+    }
+
+    viewport.addEventListener('click', (event) => {
+      if (![11,12,13].includes(currentClip) || busy || endingStarted) return;
+      event.preventDefault();
+      event.stopPropagation();
+      startEnding();
+    });
+
+    startFallback.addEventListener('click', async () => {
+      startFallback.classList.remove('show');
+      try { await active.play(); } catch(_) {}
+    });
+
+    a.preload = 'auto';
+    a.src = clip(1);
+    a.load();
+    busy = true;
+    updateDebug();
+    a.play().catch(() => startFallback.classList.add('show'));
+  })();
+  </script>
+</body>
+</html>
