@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#faf4eb">
+  <meta name="description" content="淇點伴｜老闆娘淇淇的早點與陪伴。早點遇見你，陪伴每一天。用一份用心準備的早餐，帶來簡單、真實的溫暖。">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="淇點伴｜早點遇見你，陪伴每一天">
+  <meta property="og:description" content="淇淇、早點、陪伴。三個字的心意，一份早餐的溫度。">
+  <meta property="og:url" content="https://idea.angsystem.com/brand/qidianban/">
+  <title>淇點伴｜早點遇見你，陪伴每一天</title>
+  <style>
+    :root{
+      color-scheme:light;
+      --cream:#faf4eb;--cream2:#fffaf4;--ink:#3a2925;--muted:#6e5850;
+      --pink:#de8f7c;--brick:#a74f3d;--gold:#dfab54;--line:#e8d8c9;
+      --shadow:0 24px 70px rgba(82,47,31,.10);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;scroll-padding-top:94px}
+    body{margin:0;background:var(--cream);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,sans-serif;line-height:1.8;overflow-x:hidden}
+    button,a{touch-action:manipulation}
+    a{color:inherit;text-decoration:none}
+    button{font:inherit}
+    button:focus-visible,a:focus-visible{outline:3px solid var(--brick);outline-offset:3px}
+    ::selection{background:#f5cdbb;color:var(--ink)}
+    .wrap{width:min(1160px,calc(100% - 40px));margin-inline:auto}
+    .eyebrow{font-size:.79rem;font-weight:800;letter-spacing:.2em;color:var(--brick);text-transform:uppercase}
+    .mast{position:sticky;top:0;z-index:100;background:rgba(250,244,235,.93);backdrop-filter:blur(14px);border-bottom:1px solid rgba(167,79,61,.13)}
+    .mast-inner{min-height:82px;display:flex;align-items:center;justify-content:space-between;gap:22px}
+    .brand{display:inline-flex;align-items:center;gap:12px;white-space:nowrap}
+    .seal{position:relative;display:grid;place-items:center;width:44px;height:44px;background:var(--brick);color:white;border-radius:16px 16px 16px 5px;font-size:23px;font-weight:900;transform:rotate(-7deg)}
+    .seal span{transform:rotate(7deg)}
+    .brand-name{font-size:1.47rem;font-weight:900;letter-spacing:.09em}
+    .brand-caption{font-size:.67rem;color:var(--muted);letter-spacing:.12em;font-weight:800;line-height:1.2}
+    .brand-text{display:flex;flex-direction:column;gap:2px}
+    .nav{display:flex;align-items:center;gap:34px;font-size:.91rem;font-weight:800}
+    .nav a:not(.nav-cta):hover{color:var(--brick)}
+    .nav-cta,.btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;padding:13px 24px;border-radius:100px;background:var(--brick);color:white;font-weight:900;box-shadow:0 8px 22px rgba(167,79,61,.18);border:2px solid var(--brick);transition:transform .2s,background .2s,border-color .2s}
+    .nav-cta:hover,.btn:hover{transform:translateY(-2px);background:#863b2e}
+    .menu-button{display:none;background:none;border:1px solid var(--line);width:46px;height:44px;border-radius:12px;font-size:22px}
+    .hero{position:relative;isolation:isolate;overflow:hidden;padding:85px 0 98px}
+    .hero:before{content:"";position:absolute;z-index:-1;top:-180px;right:-150px;width:720px;height:720px;border-radius:50%;background:#f4dccb;opacity:.55}
+    .hero:after{content:"";position:absolute;z-index:-1;left:-260px;bottom:-370px;width:600px;height:600px;border-radius:50%;border:90px solid rgba(222,143,124,.09)}
+    .hero-grid{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:58px}
+    .hero h1{font-size:clamp(3rem,6vw,5.8rem);line-height:1.2;letter-spacing:.025em;margin:20px 0 23px;font-weight:950}
+    .hero h1 em{font-style:normal;color:var(--brick);display:block}
+    .hero .lead{max-width:560px;color:var(--muted);font-size:1.12rem;line-height:2.05}
+    .hero-cta{display:flex;flex-wrap:wrap;align-items:center;gap:13px;margin-top:32px}
+    .btn-light{background:transparent;color:var(--brick);box-shadow:none}
+    .btn-light:hover{background:rgba(167,79,61,.09);color:var(--brick)}
+    .small-note{margin-top:29px;display:flex;align-items:center;gap:12px;font-size:.89rem;color:var(--muted)}
+    .small-note .star{font-size:1.4rem;color:#d49a42}
+    .illustration{position:relative;min-height:520px;display:grid;place-items:center}
+    .blob{position:absolute;inset:26px 12px 10px;border-radius:46% 54% 53% 47%/57% 38% 62% 43%;background:#eac5b1;transform:rotate(-8deg);box-shadow:var(--shadow)}
+    .ring{position:absolute;border:2px dashed rgba(167,79,61,.22);border-radius:50%}
+    .ring.one{width:420px;height:420px;transform:rotate(-18deg)}
+    .ring.two{width:490px;height:490px;transform:rotate(14deg)}
+    .plate{position:relative;width:min(76%,410px);aspect-ratio:1;border-radius:50%;background:#fffdf7;border:16px solid #e5d5c8;box-shadow:20px 29px 45px rgba(76,40,19,.16),inset 0 0 0 3px #fff;transform:rotate(-10deg)}
+    .plate:before{content:"";position:absolute;inset:17px;border:2px solid #f1e7d7;border-radius:50%}
+    .egg-white{position:absolute;top:28%;left:27%;width:48%;height:38%;border-radius:48% 56% 38% 54%;background:white;box-shadow:0 4px 15px #d8bc9c60;transform:rotate(20deg)}
+    .yolk{position:absolute;top:36%;left:42%;width:24%;height:23%;border-radius:50%;background:radial-gradient(circle at 34% 29%,#fff4aa 0 8%,#f7c255 14%,#f2ab35 75%);box-shadow:inset -6px -8px 15px #e6972b55}
+    .toast{position:absolute;top:16%;left:7%;width:35%;height:32%;border-radius:35% 35% 15% 15%;background:#d08f4e;border:11px solid #ad6f36;transform:rotate(-28deg);box-shadow:3px 8px 14px #5c30152a}
+    .toast:after{content:"";position:absolute;inset:5px;border-radius:32% 32% 8% 8%;background:repeating-linear-gradient(45deg,#f4cf81,#f4cf81 8px,#edc47e 8px,#edc47e 14px)}
+    .tomato{position:absolute;width:22%;height:20%;background:radial-gradient(circle at 30% 25%,#f4ae84,#cf5c48 75%);border-radius:50%;bottom:21%;left:20%;box-shadow:10px 12px 0 -4px #d76c54,18px 20px 0 -4px #dc7a61}
+    .leaf{position:absolute;width:28%;height:14%;background:#69916a;border-radius:90% 0 90% 0;transform:rotate(-23deg);right:14%;bottom:18%;box-shadow:-17px -9px 0 -1px #8ba77a}
+    .sticker{position:absolute;display:grid;place-items:center;padding:14px 23px;border-radius:22px;font-weight:900;color:var(--ink);background:#fffaf4;box-shadow:0 13px 35px rgba(83,42,28,.16);transform:rotate(8deg)}
+    .sticker.top{top:46px;right:-8px;font-size:1.04rem}
+    .sticker.bottom{bottom:48px;left:5px;transform:rotate(-9deg);font-size:1.05rem}
+    .sticker span{color:var(--brick)}
+    .archline{width:100%;height:15px;background:repeating-linear-gradient(90deg,var(--brick) 0 38px,#efd2bf 38px 76px);opacity:.65}
+    .section{padding:100px 0}
+    .section-header{max-width:730px;margin:0 auto 54px;text-align:center}
+    h2{font-size:clamp(2rem,4vw,3.1rem);letter-spacing:.04em;line-height:1.35;margin:12px 0 18px}
+    .section-header p{font-size:1.04rem;color:var(--muted)}
+    .origin{background:#fffaf4}
+    .origin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+    .origin-card{position:relative;overflow:hidden;background:white;border:1px solid var(--line);padding:33px 27px;border-radius:27px;box-shadow:0 16px 35px #6a432017;transition:transform .2s}
+    .origin-card:hover{transform:translateY(-5px)}
+    .origin-card .num{position:absolute;right:23px;top:17px;font-weight:900;color:#e6d1c2;font-size:2rem}
+    .origin-card .glyph{display:grid;place-items:center;width:78px;height:78px;border-radius:26px;background:#f6e8dc;color:var(--brick);font-size:3rem;font-weight:900;margin-bottom:22px}
+    .origin-card:nth-child(2) .glyph{background:#f9edca;color:#a77520}
+    .origin-card:nth-child(3) .glyph{background:#e9eddd;color:#557153}
+    .origin-card h3{font-size:1.47rem;margin:0 0 12px}
+    .origin-card p{color:var(--muted);margin:0}
+    .story{position:relative;background:var(--cream)}
+    .story-grid{display:grid;grid-template-columns:.72fr 1fr;gap:80px;align-items:center}
+    .story-art{position:relative;border-radius:36px;min-height:470px;background:linear-gradient(145deg,#b6684e,#d89e7e 65%,#f0c1a2);overflow:hidden;display:flex;justify-content:center;align-items:center;box-shadow:var(--shadow)}
+    .story-art:before{content:"";position:absolute;left:-100px;top:-130px;width:370px;height:370px;border-radius:50%;border:50px solid rgba(255,255,255,.13)}
+    .story-art:after{content:"";position:absolute;right:-130px;bottom:-170px;width:360px;height:360px;border-radius:50%;background:rgba(255,255,255,.10)}
+    .heart-mark{font-size:clamp(8rem,16vw,14rem);font-weight:900;color:#fffaf3;letter-spacing:-.11em;transform:rotate(-9deg);text-shadow:7px 12px 0 #8b473c44;line-height:1}
+    .story-art .art-title{position:absolute;bottom:31px;left:32px;color:#fff7ef;font-size:1.1rem;letter-spacing:.24em;font-weight:900}
+    .story-body h2{max-width:480px}
+    .story-body p{color:var(--muted);font-size:1.06rem;line-height:2.15;margin:17px 0}
+    .story-body strong{color:var(--brick)}
+    .quote{margin-top:30px;padding:23px 27px;background:#fffaf4;border-left:5px solid var(--brick);border-radius:0 18px 18px 0;font-size:1.14rem;font-weight:900;line-height:1.9}
+    .values{background:#f1e6dc}
+    .value-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+    .value{padding:30px 25px;background:rgba(255,255,255,.64);border:1px solid #e7d5c7;border-radius:24px}
+    .value .icon{font-size:2rem;line-height:1.3}
+    .value h3{font-size:1.18rem;margin:14px 0 5px}
+    .value p{color:var(--muted);margin:0}
+    .end-section{background:#342520;color:white;text-align:center;padding:100px 0}
+    .end-section .eyebrow{color:#f1b19e}
+    .end-section h2{font-size:clamp(2.5rem,5vw,4rem);margin-top:20px}
+    .end-section p{color:#ebd4c6;font-size:1.1rem;margin:0 auto 32px;max-width:600px}
+    .end-section .btn{background:#fff2e7;border-color:#fff2e7;color:var(--brick)}
+    .end-section .btn:hover{background:#ffe0cd}
+    footer{background:#211713;color:#d9c5b9;padding:34px 0}
+    .footer-inner{display:flex;justify-content:space-between;align-items:center;gap:20px;font-size:.84rem}
+    footer strong{color:white}
+    .footer-links{display:flex;gap:22px;flex-wrap:wrap}
+    footer a:hover{text-decoration:underline}
+    .footnote{font-size:.76rem;color:#bba397;margin-top:8px}
+    @media(max-width:900px){
+      .hero-grid{gap:30px}
+      .illustration{min-height:420px}
+      .story-grid{gap:40px}
+      .plate{border-width:12px}
+      .ring.one{width:330px;height:330px}
+      .ring.two{width:380px;height:380px}
+    }
+    @media(max-width:700px){
+      .wrap{width:min(100% - 32px,520px)}
+      .mast-inner{min-height:70px}
+      .brand-name{font-size:1.27rem}
+      .seal{width:39px;height:39px;font-size:21px}
+      .menu-button{display:inline-grid;place-items:center}
+      .nav{position:absolute;display:none;top:70px;left:0;right:0;background:#fff9f3;box-shadow:0 16px 28px rgba(50,30,20,.08);border-bottom:1px solid var(--line);padding:18px 24px 25px;flex-direction:column;align-items:stretch;gap:9px}
+      .nav.open{display:flex}
+      .nav a{padding:9px 12px}
+      .nav-cta{margin-top:8px;text-align:center}
+      .hero{padding:52px 0 60px}
+      .hero-grid,.story-grid{grid-template-columns:1fr}
+      .hero h1{font-size:clamp(2.65rem,10vw,4.15rem)}
+      .hero .lead{font-size:1rem}
+      .illustration{min-height:385px;max-width:490px;width:100%;margin:auto}
+      .blob{inset:17px 9px 7px}
+      .plate{width:66%;max-width:310px}
+      .ring.one{width:300px;height:300px}
+      .ring.two{width:340px;height:340px}
+      .sticker.top{right:0;top:27px}
+      .sticker.bottom{left:0;bottom:19px}
+      .section{padding:72px 0}
+      .section-header{margin-bottom:33px}
+      .origin-grid,.value-grid{grid-template-columns:1fr;gap:15px}
+      .origin-card{padding:27px}
+      .story-grid{gap:34px}
+      .story-art{min-height:340px}
+      .story-art .art-title{bottom:23px;left:24px}
+      .end-section{padding:70px 0}
+      .footer-inner{align-items:flex-start;flex-direction:column}
+    }
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+  </style>
+</head>
+<body>
+<header class="mast">
+  <div class="wrap mast-inner">
+    <a href="#top" class="brand" aria-label="淇點伴，返回首頁">
+      <span class="seal" aria-hidden="true"><span>淇</span></span>
+      <span class="brand-text"><strong class="brand-name">淇點伴</strong><span class="brand-caption">Qi Dian Ban · BREAKFAST & BRUNCH</span></span>
+    </a>
+    <button class="menu-button" type="button" aria-label="開啟選單" aria-expanded="false" aria-controls="site-nav">☰</button>
+    <nav class="nav" id="site-nav" aria-label="網站導覽">
+      <a href="#name">名字的故事</a>
+      <a href="#story">品牌故事</a>
+      <a href="#values">我們的心意</a>
+      <a class="nav-cta" href="#join">認識淇點伴 ↗</a>
+    </nav>
+  </div>
+</header>
+<main id="top">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Qi Dian Ban · A little warmth, every day</p>
+        <h1 id="hero-title">早點遇見你，<em>陪伴每一天。</em></h1>
+        <p class="lead">從早晨的第一口，到生活裡的每一個小片刻。淇點伴，想用一份用心準備的早餐，陪你開啟美好的一天。</p>
+        <div class="hero-cta">
+          <a class="btn" href="#story">閱讀品牌故事 <span aria-hidden="true">↗</span></a>
+          <a class="btn btn-light" href="#name">淇點伴的名字 <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="small-note"><span class="star" aria-hidden="true">✳</span> 淇淇的早點，也是一份溫暖的陪伴。</div>
+      </div>
+      <div class="illustration" role="img" aria-label="以早餐盤、吐司、太陽蛋與蔬菜組成的溫暖插畫">
+        <div class="blob"></div><div class="ring one"></div><div class="ring two"></div>
+        <div class="plate"><div class="toast"></div><div class="egg-white"></div><div class="yolk"></div><div class="tomato"></div><div class="leaf"></div></div>
+        <div class="sticker top">今天，也要<span>好好吃早餐 ♡</span></div>
+        <div class="sticker bottom">GOOD MORNING ☀</div>
+      </div>
+    </div>
+  </section>
+  <div class="archline" aria-hidden="true"></div>
+  <section id="name" class="section origin">
+    <div class="wrap">
+      <div class="section-header">
+        <p class="eyebrow">The name · 三個字的心意</p>
+        <h2>為什麼叫「淇點伴」？</h2>
+        <p>一個名字，藏著老闆娘淇淇最簡單也最真摯的心願。</p>
+      </div>
+      <div class="origin-grid">
+        <article class="origin-card"><span class="num">01</span><div class="glyph">淇</div><h3>淇｜淇淇</h3><p>來自老闆娘「淇淇」的名字，讓這家店多了一份親切，也多了一份專屬於她的用心。</p></article>
+        <article class="origin-card"><span class="num">02</span><div class="glyph">點</div><h3>點｜早點</h3><p>每天的早點，也是美好一天的起點。願每份早餐，都能帶來滿滿的元氣與期待。</p></article>
+        <article class="origin-card"><span class="num">03</span><div class="glyph">伴</div><h3>伴｜陪伴</h3><p>不只是填飽肚子，更希望在每個平凡日常裡，用美味與溫度陪伴著你。</p></article>
+      </div>
+    </div>
+  </section>
+  <section id="story" class="section story">
+    <div class="wrap story-grid">
+      <div class="story-art" aria-hidden="true"><div class="heart-mark">淇♡</div><div class="art-title">MADE WITH HEART · BY QIQI</div></div>
+      <div class="story-body">
+        <p class="eyebrow">About us · 我們的品牌故事</p>
+        <h2>一份早餐，<br>一段溫暖的陪伴。</h2>
+        <p>一份早餐，不只是一天的開始，更是一份溫暖的陪伴。</p>
+        <p>「<strong>淇點伴</strong>」的名字，來自老闆娘<strong>淇淇</strong>，以及「<strong>早點</strong>」與「<strong>陪伴</strong>」的美好結合。</p>
+        <p>淇淇希望，每個走進店裡的人，都能在忙碌的生活中，找到一個可以放慢腳步、享受美味的角落。</p>
+        <p>無論是趕著上班的早晨、和朋友相聚的午前，還是想為自己留一點悠閒的時光，淇點伴都希望用一份用心準備的餐點，帶給你簡單而真實的幸福。</p>
+        <div class="quote">早一點遇見美好，<br>多一點溫暖陪伴。</div>
+      </div>
+    </div>
+  </section>
+  <section id="values" class="section values">
+    <div class="wrap">
+      <div class="section-header">
+        <p class="eyebrow">Our wishes · 我們的心意</p>
+        <h2>把平凡的早餐，<br>變成值得期待的日常。</h2>
+      </div>
+      <div class="value-grid">
+        <article class="value"><div class="icon" aria-hidden="true">☀️</div><h3>美好的起點</h3><p>從一份早點開始，為每一天帶來好心情。</p></article>
+        <article class="value"><div class="icon" aria-hidden="true">🥐</div><h3>用心的滋味</h3><p>讓每一份餐點，都傳遞準備時的心意。</p></article>
+        <article class="value"><div class="icon" aria-hidden="true">🤎</div><h3>剛剛好的陪伴</h3><p>一個人也自在，和重要的人一起也溫暖。</p></article>
+      </div>
+    </div>
+  </section>
+  <section id="join" class="end-section">
+    <div class="wrap">
+      <p class="eyebrow">Qi Dian Ban</p>
+      <h2>淇點伴</h2>
+      <p>早點・陪伴・每一天<br>希望你的每個早晨，都有一點幸福的理由。</p>
+      <a class="btn" href="#top">回到首頁 ↑</a>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap footer-inner">
+    <div><strong>淇點伴 · Qi Dian Ban</strong><div>© 2026 淇點伴．早點遇見你，陪伴每一天。</div><div class="footnote">本頁為品牌介紹；菜單、營業時間與門市資訊尚未在此公告。</div></div>
+    <div class="footer-links"><a href="#story">品牌故事</a><a href="#name">名字由來</a><a href="/event/midautumn/" title="保留原站互動作品">ANG 花好月圓互動作品</a></div>
+  </div>
+</footer>
+<script>
+  (function(){
+    var btn=document.querySelector('.menu-button');
+    var nav=document.querySelector('#site-nav');
+    if(!btn||!nav)return;
+    btn.addEventListener('click',function(){
+      var open=nav.classList.toggle('open');
+      btn.setAttribute('aria-expanded',String(open));
+      btn.setAttribute('aria-label',open?'關閉選單':'開啟選單');
+      btn.textContent=open?'✕':'☰';
+    });
+    nav.querySelectorAll('a').forEach(function(a){
+      a.addEventListener('click',function(){
+        nav.classList.remove('open');
+        btn.setAttribute('aria-expanded','false');
+        btn.setAttribute('aria-label','開啟選單');
+        btn.textContent='☰';
+      });
+    });
+  })();
+</script>
+</body>
+</html>
